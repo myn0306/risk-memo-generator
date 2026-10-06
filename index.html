@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Investment Risk Memo ジェネレーター</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Shippori+Mincho:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F2F4F3; --surface:#FFFFFF; --sheet:#FFFFFF; --ink:#1D2A2B; --muted:#5F6B6B; --line:#D6DCDA;
+  --accent:#2B4C7E; --accent-ink:#FFFFFF; --seal:#B8352A; --warn:#9A6200; --ok:#2E6B4F; --soft:#E7ECEB;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141A1B; --surface:#1C2425; --sheet:#20292A; --ink:#E6ECEA; --muted:#9AA6A5; --line:#2F3A3B;
+    --accent:#8FA9D6; --accent-ink:#0F1A2A; --seal:#E06A5C; --warn:#E0A43A; --ok:#6FBF97; --soft:#243031;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141A1B; --surface:#1C2425; --sheet:#20292A; --ink:#E6ECEA; --muted:#9AA6A5; --line:#2F3A3B;
+  --accent:#8FA9D6; --accent-ink:#0F1A2A; --seal:#E06A5C; --warn:#E0A43A; --ok:#6FBF97; --soft:#243031;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;font-size:15px;line-height:1.7}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mincho{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 16px 48px}
+header.top{padding:8px 0 20px;border-bottom:1px solid var(--line);margin-bottom:20px}
+h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;font-size:clamp(24px,4.6vw,32px);margin:0 0 4px;letter-spacing:.02em}
+.lead{margin:0;color:var(--muted);max-width:62ch}
+.note{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.layout{display:grid;gap:24px}
+@media (min-width:980px){.layout{grid-template-columns:400px 1fr;align-items:start}.form{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto}}
+
+.form{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:18px}
+.form h2{font-size:15px;margin:0 0 10px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label.f{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+label.f.full{grid-column:1 / -1}
+label.f input,label.f select{background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:8px 10px;color:var(--ink);width:100%}
+fieldset{border:none;border-top:1px solid var(--line);margin:18px 0 0;padding:14px 0 0}
+legend{font-weight:700;font-size:14px;padding:0 0 6px}
+.chk{display:flex;gap:10px;align-items:flex-start;padding:6px 0;font-size:14px;line-height:1.5}
+.chk input{margin-top:3px;width:18px;height:18px;accent-color:var(--accent);flex:none}
+.sev{font-size:11px;border:1px solid currentColor;border-radius:3px;padding:0 4px;margin-left:4px;white-space:nowrap}
+.sev.s3{color:var(--seal)} .sev.s2{color:var(--warn)} .sev.s1{color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:8px 14px}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+
+/* memo sheet */
+.sheet-wrap{overflow-x:auto}
+.sheet{background:var(--sheet);border:1px solid var(--line);box-shadow:0 1px 0 var(--line),0 12px 28px -18px rgba(20,30,30,.35);
+  max-width:820px;margin:0 auto;padding:clamp(20px,4vw,48px);position:relative}
+.sheet .kicker{font-size:12px;color:var(--muted);letter-spacing:.08em;margin:0}
+.sheet h2{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:800;font-size:clamp(24px,4vw,34px);margin:2px 0 4px;letter-spacing:.01em}
+.sheet .sub{color:var(--muted);font-size:13px;margin:0}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:center;margin:26px 0 8px;padding:18px 0;border-top:2px solid var(--ink);border-bottom:1px solid var(--line)}
+.stamp{width:96px;height:96px;border-radius:50%;border:3px double var(--c);color:var(--c);display:grid;place-items:center;text-align:center;
+  font-family:"Shippori Mincho","Hiragino Mincho ProN",serif;font-weight:800;font-size:17px;line-height:1.25;transform:rotate(-8deg)}
+.verdict p{margin:0}
+.verdict .vt{font-family:"Shippori Mincho","Hiragino Mincho ProN",serif;font-size:20px;font-weight:700}
+.counts{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:4px}
+.sheet h3{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-size:18px;margin:28px 0 10px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.sheet h3 small{font-family:"Zen Kaku Gothic New",sans-serif;font-size:12px;color:var(--muted);font-weight:400;margin-left:8px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 16px;margin:0;font-size:14px}
+.facts dt{font-size:12px;color:var(--muted)} .facts dd{margin:0;font-weight:500}
+.risk{display:grid;grid-template-columns:52px 1fr;gap:4px 14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.risk .lv{font-family:"Shippori Mincho","Hiragino Mincho ProN",serif;font-weight:800;font-size:15px;text-align:center;border:1.5px solid currentColor;border-radius:4px;padding:4px 0;height:max-content}
+.risk .lv.s3{color:var(--seal)} .risk .lv.s2{color:var(--warn)} .risk .lv.s1{color:var(--muted)}
+.risk h4{margin:0;font-size:15px}
+.risk p{margin:2px 0 0;font-size:14px}
+.risk .why{color:var(--muted)}
+.risk .do::before{content:"対応　";font-weight:700;color:var(--accent)}
+ol.list,ul.list{margin:0;padding-left:1.4em;font-size:14px}
+ol.list li,ul.list li{padding:3px 0}
+.ins{width:100%;border-collapse:collapse;font-size:14px;min-width:460px}
+.ins th,.ins td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.ins th{font-size:12px;color:var(--muted);font-weight:500}
+.ins td.caveat{color:var(--muted);font-size:13px}
+.cost{font-size:14px}
+.cost strong{font-size:18px}
+.empty{color:var(--muted);font-size:14px}
+.disclaimer{margin-top:32px;padding-top:12px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+.toolbar{max-width:820px;margin:0 auto 12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+
+@media print{
+  body{background:#fff;color:#000}
+  header.top,.form,.toolbar{display:none !important}
+  .layout{display:block}
+  .sheet{box-shadow:none;border:none;max-width:none;padding:0;background:#fff}
+  .risk,.ins tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Investment Risk Memo ジェネレーター</h1>
+    <p class="lead">買収・出資を検討している会社の情報とチェック項目を入れると、投資前に読むべき論点を1枚のメモにまとめます。</p>
+    <p class="note">初期表示の会社は架空のサンプルです。入力内容はこの端末のブラウザにだけ保存され、外部には送信されません。</p>
+  </header>
+
+  <div class="layout">
+    <form class="form" id="f" autocomplete="off">
+      <h2>対象の会社</h2>
+      <div class="grid2">
+        <label class="f full">会社名<input name="company"></label>
+        <label class="f">業種<select name="industry">
+          <option>製造業</option><option>建設・測量</option><option>卸売業</option><option>IT・サービス</option><option>医療・福祉・廃棄物</option><option>その他</option>
+        </select></label>
+        <label class="f">取引の形<select name="deal"><option>株式取得</option><option>事業譲渡</option></select></label>
+        <label class="f">売上（百万円）<input name="sales" type="number" min="0" inputmode="numeric"></label>
+        <label class="f">従業員数（人）<input name="staff" type="number" min="0" inputmode="numeric"></label>
+        <label class="f">業歴（年）<input name="years" type="number" min="0" inputmode="numeric"></label>
+        <label class="f">想定の取得価格（百万円）<input name="price" type="number" min="0" inputmode="numeric"></label>
+      </div>
+      <div id="checks"></div>
+      <div class="actions" style="margin-top:18px">
+        <button type="button" class="btn" id="clearBtn">チェックをすべて外す</button>
+        <button type="button" class="btn" id="sampleBtn">サンプルに戻す</button>
+      </div>
+    </form>
+
+    <section aria-label="作成されたメモ">
+      <div class="toolbar">
+        <button class="btn" id="copyBtn">テキストでコピー</button>
+        <button class="btn primary" id="printBtn">印刷・PDFで保存</button>
+      </div>
+      <div class="sheet-wrap"><article class="sheet" id="sheet" aria-live="polite"></article></div>
+    </section>
+  </div>
+</div>
+
+<script>
+(function(){
+  var KEY = 'risk-memo-v1';
+  var FACTORS = [
+    {g:'人・組織', id:'owner', sev:3, label:'社長がいないと受注や取引先対応が回らない',
+     why:'代表者が退くと、顧客・金融機関・行政との関係がまとめて消えるおそれがある。',
+     act:'現代表の続投契約（期間・報酬・競業避止）を結び、主要取引先ごとの引継ぎ計画を作る。',
+     docs:['主要取引先ごとの窓口担当の一覧','組織図と役割分担'], ins:'キーマン保険', q:'社長以外で、主要取引先と直接話せる人は誰ですか。'},
+    {g:'人・組織', id:'qual', sev:3, label:'許認可・入札に必要な資格者が1〜2名しかいない',
+     why:'資格者が辞めると許認可の要件や入札資格を満たせなくなる可能性がある。',
+     act:'資格者の残留条件（報酬・役職）を先に決め、追加の資格者の採用・育成計画を立てる。',
+     docs:['資格者の名簿（年齢・資格・取得年）','許認可・入札資格の要件表'], ins:null, q:'資格者が退職した場合、許認可と入札資格は維持できますか。'},
+    {g:'人・組織', id:'overtime', sev:2, label:'残業代の計算や支払いがあいまい',
+     why:'未払い残業代は過去にさかのぼって請求されることがあり、買収後に負債として表に出る。',
+     act:'未払い額を試算し、価格の調整か、売り手が負担する特別補償で手当てする。',
+     docs:['就業規則・賃金規程','賃金台帳とタイムカード（2年分以上）','36協定'], ins:'EPLI', q:'過去に労働基準監督署の指導や、従業員からの請求はありましたか。'},
+    {g:'人・組織', id:'retire', sev:2, label:'退職金の積立が足りていない',
+     why:'規程上の退職金に対して積立が不足していると、実質的な負債になる。',
+     act:'積立不足の額を負債として取得価格に反映する。',
+     docs:['退職金規程','退職金の積立状況（中退共など）'], ins:null, q:'今後3年以内に定年を迎える従業員は何人いますか。'},
+    {g:'顧客・取引', id:'conc', sev:3, label:'上位1社の売上が全体の3割を超える',
+     why:'その1社の方針変更で売上が大きく落ちる。株主の交代が見直しのきっかけになることもある。',
+     act:'主要取引先への事前のあいさつと、取引継続の意向確認を計画に入れる。',
+     docs:['取引先別の売上（3期分）','主要取引先との基本契約書'], ins:null, q:'株主が変わると、取引条件を見直しそうな取引先はありますか。'},
+    {g:'顧客・取引', id:'coc', sev:2, label:'主要な取引に契約書がない、または株主変更で解除できる条項がある',
+     why:'口約束の取引は引き継げる根拠が弱く、条項によっては株式取得だけで契約が解除されうる。',
+     act:'取引の実態を書面にし、同意が必要な取引先からは事前に同意を取る。',
+     docs:['主要な契約書の一式','チェンジ・オブ・コントロール条項の有無の一覧'], ins:null, q:'契約書を交わしていない主要取引先はありますか。'},
+    {g:'顧客・取引', id:'public', sev:1, label:'官公庁・自治体からの売上が大きい',
+     why:'強みでもあるが、入札資格や指名の継続は役員構成や経営事項審査の点数で変わることがある。',
+     act:'入札参加資格の名義と更新時期を確認し、法人格を維持できる株式取得を前提に進める。',
+     docs:['入札参加資格の一覧と更新時期','経営事項審査の結果','落札・受注の履歴'], ins:null, q:'直近3年で、指名から外れた発注機関はありますか。'},
+    {g:'財務・税務', id:'debt', sev:2, label:'借入が多い、または代表者の個人保証がある',
+     why:'株主の交代時に金融機関が条件の見直しや保証の付け替えを求めることがある。',
+     act:'個人保証の解除・付け替えについて、金融機関と事前に協議する（経営者保証ガイドラインの活用）。',
+     docs:['借入金の明細','金銭消費貸借契約と保証契約'], ins:null, q:'株主の変更について、取引金融機関に話をしたことはありますか。'},
+    {g:'財務・税務', id:'offbook', sev:3, label:'帳簿に載っていない債務がありそう（保証・リース・未計上の負債）',
+     why:'買収後に見つかる負債は、そのまま買い手の負担になる。',
+     act:'表明保証と特別補償の条項で手当てし、補償の上限と期間を決める。',
+     docs:['保証契約・リース契約の一覧','法人税申告書の別表'], ins:'W&I', q:'会社として、他社や個人の借入を保証していますか。'},
+    {g:'財務・税務', id:'tax', sev:2, label:'税務処理に不明な点がある、または税務調査で指摘を受けたことがある',
+     why:'過去の申告の誤りは、追徴課税として買収後の会社に請求される。',
+     act:'税理士に税務の調査（税務DD）を依頼する。',
+     docs:['法人税・消費税の申告書（3期分）','税務調査の指摘事項と対応の記録'], ins:'W&I', q:'過去5年で税務調査を受けましたか。指摘事項はありましたか。'},
+    {g:'財務・税務', id:'related', sev:2, label:'社長や親族との取引がある（家賃・貸付・高めの役員報酬など）',
+     why:'買収後に取引をやめると、利益や費用の構造が大きく変わる。',
+     act:'クロージングまでに解消するか、条件を相場どおりに見直す。',
+     docs:['社長・親族との取引の一覧','役員報酬の推移'], ins:null, q:'社長や親族が所有する不動産・会社との取引はありますか。'},
+    {g:'許認可・法務', id:'license', sev:2, label:'事業に許認可や登録が必要',
+     why:'株式取得なら許認可は原則そのまま残るが、役員の変更で要件を満たさなくなる場合がある。',
+     act:'役員変更後も要件を満たすかを所轄の行政機関に事前に確認し、必要な変更届を準備する。',
+     docs:['許認可証の写しと有効期限','許認可の要件と、要件を満たしている人の一覧'], ins:null, q:'許認可の要件を満たしている役員・社員は誰ですか。'},
+    {g:'許認可・法務', id:'suit', sev:3, label:'係争中の案件や、対応中のクレームがある',
+     why:'すでに起きている紛争は、保険でも原則として補償されない。',
+     act:'想定される損失額を見積もり、特別補償の対象にするか価格に反映する。',
+     docs:['係争・クレームの一覧','弁護士とのやりとりの記録'], ins:null, q:'いま対応中のクレームや、弁護士に相談している案件はありますか。'},
+    {g:'許認可・法務', id:'pl', sev:2, label:'製品や施工の不具合で賠償が起きうる',
+     why:'引き渡した後の製品や工事の事故は、何年も後に請求されることがある。',
+     act:'加入中の賠償責任保険の補償額と期間を確認し、必要なら見直す。',
+     docs:['加入中の保険証券（PL・請負賠償など）','過去の事故・クレームの履歴'], ins:'PL', q:'過去に製品や工事の事故で賠償したことはありますか。'},
+    {g:'許認可・法務', id:'dno', sev:1, label:'買収後に役員を送る、または現役員が続投する',
+     why:'役員個人が、株主・取引先・従業員から責任を問われる場面に備える必要がある。',
+     act:'現在の加入状況を確認し、クロージング日に合わせて加入または補償内容を見直す。',
+     docs:['D&O保険の証券（加入している場合）'], ins:'D&O', q:'会社役員賠償責任保険（D&O保険）に加入していますか。'},
+    {g:'設備・IT', id:'facility', sev:2, label:'設備や建物が古く、修繕を先送りしている',
+     why:'取得価格が安くても、更新費用が後から大きくのしかかる。',
+     act:'今後3〜5年の更新・修繕費用を見積もり、実質的な取得コストに含める。',
+     docs:['固定資産台帳','修繕の履歴','設備更新の見積もり'], ins:null, q:'この3年で先送りしている修繕や設備更新はありますか。'},
+    {g:'設備・IT', id:'it', sev:2, label:'業務が特定の人のExcelやPCに頼っている／個人情報の管理ルールがない',
+     why:'担当者の退職やPCの故障で業務が止まり、情報漏えいの責任も問われうる。',
+     act:'引継ぎ前にデータの置き場所を洗い出し、アカウントと契約を会社名義に移す。',
+     docs:['業務で使うシステム・ファイルの一覧','個人情報の取扱いルール','バックアップの状況'], ins:'サイバー', q:'業務データのバックアップは、誰がどこに取っていますか。'}
+  ];
+  var INS = {
+    'キーマン保険':{name:'経営者・キーマン向けの生命保険',cover:'代表者や中心人物の死亡・就業不能による損失',caveat:'関係が消えること自体は補償できないため、引継ぎ計画とセットで考える'},
+    'EPLI':{name:'雇用慣行賠償責任保険（EPLI）',cover:'ハラスメント・不当解雇などで従業員から訴えられた場合の賠償・争訟費用',caveat:'過去の未払い賃金そのものは対象外が一般的'},
+    'W&I':{name:'表明保証保険（W&I保険）',cover:'売り手の表明保証の違反が買収後に見つかった場合の損失',caveat:'買い手が調査で知っていたリスクは原則対象外。小規模案件では引受けが難しいこともある'},
+    'PL':{name:'生産物・請負業者賠償責任保険',cover:'製品や工事の欠陥による第三者への賠償',caveat:'補償の対象期間と、過去の引き渡し分の扱いを確認する'},
+    'D&O':{name:'会社役員賠償責任保険（D&O保険）',cover:'役員個人が業務上の判断で責任を問われた場合の賠償・争訟費用',caveat:'加入前から分かっていた請求は対象外'},
+    'サイバー':{name:'サイバー保険',cover:'情報漏えい・システム停止による損害賠償と復旧費用',caveat:'最低限のセキュリティ対策が加入条件になることが多い'}
+  };
+  var INDUSTRY_DOCS = {
+    '建設・測量':['建設業許可・測量業登録の写し','経営事項審査の結果通知'],
+    '医療・福祉・廃棄物':['事業の許可・指定の写しと更新時期','行政の実地指導・立入検査の記録'],
+    '製造業':['主要設備の一覧と稼働年数'],
+    '卸売業':['仕入先との代理店契約・取引基本契約'],
+    'IT・サービス':['ソフトウェア・成果物の権利の帰属が分かる契約'],
+    'その他':[]
+  };
+  var SAMPLE = {company:'株式会社さくら測量設計（架空）', industry:'建設・測量', deal:'株式取得', sales:'180', staff:'14', years:'38', price:'30',
+    checks:['owner','qual','public','debt','offbook','license','dno','facility']};
+
+  var form = document.getElementById('f');
+  // build checklist
+  var groups = [];
+  FACTORS.forEach(function(x){ if(groups.indexOf(x.g)<0) groups.push(x.g); });
+  var SEVTXT = {3:'重要度 高',2:'重要度 中',1:'確認'};
+  document.getElementById('checks').innerHTML = groups.map(function(g){
+    return '<fieldset><legend>'+g+'</legend>'+FACTORS.filter(function(x){return x.g===g;}).map(function(x){
+      return '<label class="chk"><input type="checkbox" name="c" value="'+x.id+'"><span>'+x.label+'<span class="sev s'+x.sev+'">'+SEVTXT[x.sev]+'</span></span></label>';
+    }).join('')+'</fieldset>';
+  }).join('');
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function today(){ var d=new Date(); return d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日'; }
+
+  function read(){
+    var v = {company:form.company.value, industry:form.industry.value, deal:form.deal.value, sales:form.sales.value, staff:form.staff.value, years:form.years.value, price:form.price.value, checks:[]};
+    Array.prototype.forEach.call(form.querySelectorAll('input[name=c]:checked'), function(i){ v.checks.push(i.value); });
+    return v;
+  }
+  function fill(v){
+    ['company','industry','deal','sales','staff','years','price'].forEach(function(k){ form[k].value = v[k]||''; if(k==='industry'&&!v[k]) form[k].selectedIndex=0; if(k==='deal'&&!v[k]) form[k].selectedIndex=0; });
+    Array.prototype.forEach.call(form.querySelectorAll('input[name=c]'), function(i){ i.checked = v.checks.indexOf(i.value)>=0; });
+  }
+
+  function verdict(sel){
+    var h = sel.filter(function(x){return x.sev===3;}).length;
+    var score = sel.reduce(function(a,x){return a+x.sev;},0);
+    if(h>=3 || score>=14) return {stamp:'慎重',c:'var(--seal)',t:'重要な論点が多く、条件の調整なしには進めにくい案件です。',h:h,score:score};
+    if(h>=1 || score>=6) return {stamp:'条件付',c:'var(--warn)',t:'論点はあるが、価格・契約条件・引継ぎ計画で手当てできれば前向きに検討できます。',h:h,score:score};
+    return {stamp:'前向き',c:'var(--ok)',t:'大きな論点は見当たりません。基本的な書類の確認を進めてください。',h:h,score:score};
+  }
+
+  function build(v){
+    var sel = FACTORS.filter(function(x){return v.checks.indexOf(x.id)>=0;}).sort(function(a,b){return b.sev-a.sev;});
+    var vd = verdict(sel);
+    var docs = [];
+    function addDoc(d){ if(docs.indexOf(d)<0) docs.push(d); }
+    ['決算書・申告書（3期分）','定款・株主名簿・履歴事項全部証明書'].forEach(addDoc);
+    (INDUSTRY_DOCS[v.industry]||[]).forEach(addDoc);
+    sel.forEach(function(x){ x.docs.forEach(addDoc); });
+    if(v.deal==='事業譲渡') addDoc('移す契約・許認可・従業員の範囲が分かる一覧（事業譲渡では個別に引き継ぎが必要）');
+    var qs = sel.map(function(x){return x.q;});
+    var insKeys = []; sel.forEach(function(x){ if(x.ins && insKeys.indexOf(x.ins)<0) insKeys.push(x.ins); });
+    var hidden = sel.filter(function(x){return ['overtime','retire','facility','offbook','suit'].indexOf(x.id)>=0;});
+    var name = v.company || '（会社名未入力）';
+    var facts = [['業種',v.industry],['取引の形',v.deal],['売上',v.sales?v.sales+'百万円':'—'],['従業員',v.staff?v.staff+'人':'—'],['業歴',v.years?v.years+'年':'—'],['想定の取得価格',v.price?v.price+'百万円':'—']];
+
+    var html = '<p class="kicker">Investment Risk Memo</p>'+
+      '<h2>'+esc(name)+'</h2>'+
+      '<p class="sub">作成日 '+today()+'　投資前の論点整理</p>'+
+      '<div class="verdict"><div class="stamp" style="--c:'+vd.c+'">'+vd.stamp+'</div><div><p class="vt">'+vd.t+'</p>'+
+      '<p class="counts"><span>チェックした論点 '+sel.length+'件</span><span>うち重要度 高 '+vd.h+'件</span></p></div></div>'+
+      '<dl class="facts">'+facts.map(function(f){return '<div><dt>'+f[0]+'</dt><dd>'+esc(f[1])+'</dd></div>';}).join('')+'</dl>';
+
+    html += '<h3>重点リスク<small>重要度の高い順</small></h3>';
+    html += sel.length ? sel.map(function(x){
+      return '<div class="risk"><div class="lv s'+x.sev+'">'+(x.sev===3?'高':x.sev===2?'中':'確認')+'</div><div><h4>'+x.label+'</h4><p class="why">'+x.why+'</p><p class="do">'+x.act+'</p></div></div>';
+    }).join('') : '<p class="empty">左のチェック項目から、当てはまるものを選ぶとここに表示されます。</p>';
+
+    html += '<h3>実質的な取得コスト<small>価格以外にかかりうる費用</small></h3>';
+    html += '<p class="cost">想定の取得価格 <strong>'+(v.price?esc(v.price)+'百万円':'未入力')+'</strong>'+
+      (hidden.length? '　＋　要試算：'+hidden.map(function(x){return {overtime:'未払い残業代',retire:'退職金の積立不足',facility:'設備更新・修繕',offbook:'簿外債務',suit:'係争の損失'}[x.id];}).join('、') : '　＋　大きな追加費用の論点はチェックされていません')+
+      '</p><p class="cost" style="color:var(--muted);font-size:13px;margin-top:4px">仲介手数料・調査費用・運転資金の手当ても、あわせて見込んでおく。</p>';
+
+    html += '<h3>確認すべき書類<small>'+docs.length+'点</small></h3><ol class="list">'+docs.map(function(d){return '<li>'+esc(d)+'</li>';}).join('')+'</ol>';
+
+    html += '<h3>売り手に聞くこと</h3>';
+    html += qs.length ? '<ol class="list">'+qs.map(function(q){return '<li>'+q+'</li>';}).join('')+'</ol>' : '<p class="empty">論点を選ぶと、質問が表示されます。</p>';
+
+    html += '<h3>保険で移せるリスク<small>保険でカバーできない部分は価格と契約で手当てする</small></h3>';
+    html += insKeys.length ? '<div class="sheet-wrap"><table class="ins"><thead><tr><th>保険</th><th>カバーするもの</th><th>注意点</th></tr></thead><tbody>'+
+      insKeys.map(function(k){var i=INS[k];return '<tr><td>'+i.name+'</td><td>'+i.cover+'</td><td class="caveat">'+i.caveat+'</td></tr>';}).join('')+'</tbody></table></div>'
+      : '<p class="empty">チェックした論点に対応する保険はありません。</p>';
+
+    html += '<p class="disclaimer">このメモは投資前に論点を整理するための参考資料です。法務・税務・労務・保険の判断は、それぞれの専門家の確認を受けてください。保険の補償範囲は商品と契約内容によって異なります。</p>';
+    return {html:html, sel:sel, vd:vd, docs:docs, qs:qs, insKeys:insKeys, name:name, facts:facts, v:v};
+  }
+
+  function asText(b){
+    var t = 'Investment Risk Memo\n'+b.name+'（作成日 '+today()+'）\n\n総合所見：'+b.vd.stamp+'　'+b.vd.t+'\n';
+    t += b.facts.map(function(f){return f[0]+'：'+f[1];}).join('　')+'\n';
+    t += '\n■重点リスク\n'+(b.sel.length?b.sel.map(function(x){return '['+(x.sev===3?'高':x.sev===2?'中':'確認')+'] '+x.label+'\n　対応：'+x.act;}).join('\n'):'なし')+'\n';
+    t += '\n■確認すべき書類\n'+b.docs.map(function(d,i){return (i+1)+'. '+d;}).join('\n')+'\n';
+    t += '\n■売り手に聞くこと\n'+(b.qs.length?b.qs.map(function(q,i){return (i+1)+'. '+q;}).join('\n'):'なし')+'\n';
+    t += '\n■保険で移せるリスク\n'+(b.insKeys.length?b.insKeys.map(function(k){return '・'+INS[k].name+'：'+INS[k].cover+'（注意：'+INS[k].caveat+'）';}).join('\n'):'なし')+'\n';
+    t += '\n※投資前の論点整理のための参考資料です。各分野の専門家の確認を受けてください。';
+    return t;
+  }
+
+  var last;
+  function render(){
+    var v = read();
+    last = build(v);
+    document.getElementById('sheet').innerHTML = last.html;
+    try { localStorage.setItem(KEY, JSON.stringify(v)); } catch(e){}
+  }
+
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
+  fill(saved && saved.checks ? saved : SAMPLE);
+  form.addEventListener('input', render);
+  form.addEventListener('change', render);
+  form.addEventListener('submit', function(e){ e.preventDefault(); });
+  document.getElementById('clearBtn').addEventListener('click', function(){
+    Array.prototype.forEach.call(form.querySelectorAll('input[name=c]'), function(i){ i.checked=false; }); render();
+  });
+  document.getElementById('sampleBtn').addEventListener('click', function(){ fill(SAMPLE); render(); });
+  document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+  var copyBtn = document.getElementById('copyBtn');
+  copyBtn.addEventListener('click', function(){
+    var text = asText(last);
+    var done = function(){ copyBtn.textContent='コピーしました'; setTimeout(function(){ copyBtn.textContent='テキストでコピー'; },1600); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done, function(){ fallback(text); done(); });
+    } else { fallback(text); done(); }
+  });
+  function fallback(text){
+    var ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');}catch(e){} document.body.removeChild(ta);
+  }
+  render();
+})();
+</script>
+</body>
+</html>
